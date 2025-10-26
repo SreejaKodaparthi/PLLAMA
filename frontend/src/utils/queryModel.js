@@ -1,7 +1,7 @@
 // frontend/src/utils/queryModel.js
 export async function queryModel({prompt}) {
   try {
-    const res = await fetch("http://localhost:5000/generate", { // Or your ngrok URL
+    const res = await fetch("http://localhost:5000/api/model/generate", { // Or your ngrok URL
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({prompt}),

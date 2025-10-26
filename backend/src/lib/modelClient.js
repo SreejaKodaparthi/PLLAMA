@@ -16,12 +16,12 @@ async function modelClient(prompt) {
     const data = await res.json();
 
     // Always return string
-    if (typeof data.output === "string") {
-      return data.output;
-    } else if (data.output?.text) {
-      return data.output.text;
+    if (typeof data.response === "string") {
+      return data.response;
+    } else if (data.response?.text) {
+      return data.response.text;
     } else {
-      return JSON.stringify(data.output);
+      return JSON.stringify(data.response);
     }
   } catch (err) {
     console.error("modelClient error:", err);
