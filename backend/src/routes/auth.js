@@ -8,7 +8,7 @@ const router = Router();
 // Signup
 router.post("/signup", async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const { email, password, location } = req.body;
     if (!email || !password)
       return res.status(400).json({ error: "Email and password required" });
 
@@ -17,7 +17,7 @@ router.post("/signup", async (req, res) => {
       return res.status(400).json({ error: "User already exists" });
 
     const hashed = await bcrypt.hash(password, 10);
-    const user = new User({ email, password: hashed });
+    const user = new User({ email, password: hashed, location });
     await user.save();
 
     res.json({ success: true });
@@ -44,7 +44,7 @@ router.post("/login", async (req, res) => {
       process.env.JWT_SECRET || "devsecret",
       { expiresIn: "12h" }
     );
-    res.json({ token, user: { id: user._id, email: user.email } });
+    res.json({ token, user: { id: user._id, email: user.email, location: user.location } });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

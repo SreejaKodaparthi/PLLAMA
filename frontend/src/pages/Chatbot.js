@@ -41,16 +41,41 @@ export default function Chatbot() {
 
   // Load chats from localStorage
   useEffect(() => {
-    const savedChats = localStorage.getItem("chatHistory");
-    if (savedChats) {
-      const parsedChats = JSON.parse(savedChats);
-      setChatHistory(parsedChats);
-      setActiveChatId(parsedChats[0]?.id || null);
-    } else {
+    // Try to load from server if authenticated
+    const token = localStorage.getItem("auth_token");
+    const load = async () => {
+      if (token) {
+        try {
+          const res = await fetch("http://localhost:5000/api/history/conversations", {
+            headers: { Authorization: `Bearer ${token}` },
+          });
+          if (res.ok) {
+            const data = await res.json();
+            // convert server conversations to frontend shape (use _id as id)
+            const convs = data.conversations.map((c) => ({
+              id: c._id,
+              _id: c._id,
+              title: c.title || "Chat",
+              date: new Date(c.createdAt).toLocaleDateString(),
+              messages: c.messages,
+            }));
+            if (convs.length) {
+              setChatHistory(convs);
+              setActiveChatId(convs[0]?.id || null);
+              localStorage.setItem("chatHistory", JSON.stringify(convs));
+              return;
+            }
+          }
+        } catch (err) {
+          console.error("Failed to load conversations from server:", err);
+        }
+      }
+
+      // Fallback to local default
       const defaultChat = [
         {
           id: Date.now(),
-          title: "Crop Disease Diagnosis",
+          title: "New Chat",
           date: "Today",
           messages: [
             { role: "assistant", content: "Hello! How can I help with your crops?" },
@@ -60,7 +85,9 @@ export default function Chatbot() {
       setChatHistory(defaultChat);
       setActiveChatId(defaultChat[0].id);
       localStorage.setItem("chatHistory", JSON.stringify(defaultChat));
-    }
+    };
+
+    load();
   }, []);
 
   // Scroll to bottom whenever messages change
@@ -75,9 +102,45 @@ export default function Chatbot() {
     chat.title.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const saveChats = (updatedChats) => {
+  const saveChats = async (updatedChats) => {
     setChatHistory(updatedChats);
     localStorage.setItem("chatHistory", JSON.stringify(updatedChats));
+
+    // Persist each changed conversation to backend when authenticated
+    const token = localStorage.getItem("auth_token");
+    if (!token) return;
+
+    // Upsert each conversation: detect server id with _id or ObjectId-like id
+    // Work on a mutable copy so we can update ids after creation
+    let localUpdated = [...updatedChats];
+    const isObjectId = (s) => /^[0-9a-fA-F]{24}$/.test(String(s));
+
+    for (let i = 0; i < localUpdated.length; i++) {
+      const chat = localUpdated[i];
+      try {
+        const payload = { title: chat.title, messages: chat.messages };
+        const serverId = chat._id || (isObjectId(chat.id) ? chat.id : null);
+
+        if (serverId) {
+          // update existing
+          await fetch(`http://localhost:5000/api/history/conversations/${serverId}`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+            body: JSON.stringify(payload),
+          });
+          // ensure both id and _id are present locally
+          if (!chat._id && isObjectId(chat.id)) {
+            localUpdated[i] = { ...chat, _id: chat.id };
+          }
+        }
+      } catch (err) {
+        console.error("Failed to persist conversation:", err);
+      }
+    }
+
+    // If we changed any ids, update the state once
+    setChatHistory(localUpdated);
+    localStorage.setItem("chatHistory", JSON.stringify(localUpdated));
   };
 
   // Send message
@@ -85,7 +148,7 @@ export default function Chatbot() {
     e.preventDefault();
     if (!inputValue.trim()) return;
 
-    const userMessage = { role: "user", content: inputValue };
+  const userMessage = { role: "user", content: String(inputValue) };
 
     // Add user message immediately
     const updatedChats = chatHistory.map((chat) => {
@@ -99,8 +162,8 @@ export default function Chatbot() {
 
     try {
       // Get AI reply as string
-      const aiResponse = await queryModel({ prompt: inputValue });
-      const assistantMessage = { role: "assistant", content: aiResponse };
+  const aiResponse = await queryModel({ prompt: inputValue });
+  const assistantMessage = { role: "assistant", content: String(aiResponse) };
 
       // Add assistant reply using updatedChats (not old chatHistory)
       const updatedChatsWithReply = updatedChats.map((chat) => {
@@ -114,7 +177,7 @@ export default function Chatbot() {
       console.error("Error fetching model response:", err);
       const errorMessage = {
         role: "assistant",
-        content: "❌ Failed to get response from AI model. Please try again.",
+        content: String("❌ Failed to get response from AI model. Please try again."),
       };
 
       const updatedChatsWithError = updatedChats.map((chat) => {
@@ -146,23 +209,81 @@ export default function Chatbot() {
     const updatedChats = [newChat, ...chatHistory];
     saveChats(updatedChats);
     setActiveChatId(newChat.id);
+
+    // Try to persist immediately if authenticated
+    const token = localStorage.getItem("auth_token");
+    if (token) {
+      (async () => {
+        try {
+          const res = await fetch(`http://localhost:5000/api/history/conversations`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+            body: JSON.stringify({ title: newChat.title, messages: newChat.messages }),
+          });
+          if (res.ok) {
+            const data = await res.json();
+            const serverConv = data.conversation;
+            const after = [ { ...newChat, id: serverConv._id, _id: serverConv._id }, ...chatHistory];
+            setChatHistory(after);
+            localStorage.setItem("chatHistory", JSON.stringify(after));
+            setActiveChatId(serverConv._id);
+          }
+        } catch (err) {
+          console.error("Failed to persist new conversation:", err);
+        }
+      })();
+    }
   };
 
   // Delete chat
-  const handleDeleteChat = (id) => {
+  const handleDeleteChat = async (id) => {
     const updatedChats = chatHistory.filter((chat) => chat.id !== id);
-    saveChats(updatedChats);
+    await saveChats(updatedChats);
     if (activeChatId === id) setActiveChatId(updatedChats[0]?.id || null);
+
+    // Delete on server if it has an _id and user is authenticated
+    const token = localStorage.getItem("auth_token");
+    if (token) {
+      // find chat in updatedChats (it may have _id)
+      const maybe = (chatHistory.find((c) => c.id === id || c._id === id) || {});
+      const convId = maybe._id || (String(id).length === 24 ? id : null);
+      if (convId) {
+        try {
+          await fetch(`http://localhost:5000/api/history/conversations/${convId}`, {
+            method: "DELETE",
+            headers: { Authorization: `Bearer ${token}` },
+          });
+        } catch (err) {
+          console.error("Failed to delete conv on server:", err);
+        }
+      }
+    }
   };
 
   // Rename chat
-  const handleRenameChat = (id) => {
+  const handleRenameChat = async (id) => {
     const newTitle = prompt("Enter new chat title:");
     if (!newTitle) return;
-    const updatedChats = chatHistory.map((chat) =>
-      chat.id === id ? { ...chat, title: newTitle } : chat
-    );
-    saveChats(updatedChats);
+    const updatedChats = chatHistory.map((chat) => (chat.id === id ? { ...chat, title: newTitle } : chat));
+    await saveChats(updatedChats);
+
+    // Persist title change using the up-to-date entry
+    const token = localStorage.getItem("auth_token");
+    if (token) {
+      const updated = updatedChats.find((c) => c.id === id || c._id === id);
+      const convId = updated?._id || (String(id).length === 24 ? id : null);
+      if (convId) {
+        try {
+          await fetch(`http://localhost:5000/api/history/conversations/${convId}`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+            body: JSON.stringify({ title: newTitle, messages: updated.messages }),
+          });
+        } catch (err) {
+          console.error("Failed to persist rename:", err);
+        }
+      }
+    }
   };
 
   // Logout
@@ -342,7 +463,12 @@ export default function Chatbot() {
                       : "bg-gray-100 text-gray-900"
                   }`}
                 >
-                  <p className="text-[15px] leading-relaxed">{message.content}</p>
+                  <p className="text-[15px] leading-relaxed">
+                    {typeof message.content === "string"
+                      ? message.content
+                      : // If it's an object (unexpected), stringify safely for display
+                        JSON.stringify(message.content)}
+                  </p>
                 </div>
                 {message.role === "user" && (
                   <div className="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center flex-shrink-0">
@@ -373,9 +499,6 @@ export default function Chatbot() {
                 <Send className="w-5 h-5" />
               </Button>
             </form>
-            <p className="text-xs text-gray-500 mt-3 text-center">
-              All chats are now saved permanently in your browser.
-            </p>
           </div>
         </div>
       </div>

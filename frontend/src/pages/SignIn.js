@@ -9,6 +9,8 @@ export default function SignIn() {
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [location, setLocation] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -24,7 +26,7 @@ export default function SignIn() {
       const res = await fetch("http://localhost:5000/api/auth/signup", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ email, password, location }),
       });
 
       const data = await res.json();
@@ -83,12 +85,30 @@ export default function SignIn() {
           <div className="relative">
             <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
             <Input
-              type="password"
+              type={showPassword ? "text" : "password"}
               placeholder="Create a password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
-              className="h-12 pl-10 bg-gray-50 border-gray-200 focus:border-green-500 focus:ring-green-500"
+              className="h-12 pl-10 pr-10 bg-gray-50 border-gray-200 focus:border-green-500 focus:ring-green-500"
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword((s) => !s)}
+              className="absolute right-3 top-1/2 transform -translate-y-1/2 text-lg"
+              aria-label={showPassword ? "Hide password" : "Show password"}
+            >
+              {showPassword ? "🙈" : "👁️"}
+            </button>
+          </div>
+
+          <div className="relative">
+            <Input
+              type="text"
+              placeholder="Location (city, region)"
+              value={location}
+              onChange={(e) => setLocation(e.target.value)}
+              className="h-12 pl-3 bg-gray-50 border-gray-200 focus:border-green-500 focus:ring-green-500"
             />
           </div>
 

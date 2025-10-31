@@ -69,12 +69,7 @@ export default function Layout({ children, currentPageName }) {
                   </button>
                 </>
               ) : (
-                <button
-                  onClick={() => User.loginWithRedirect(window.location.origin + createPageUrl("Chatbot"))}
-                  className="px-6 py-2.5 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-lg hover:shadow-lg transition-all duration-200 font-medium"
-                >
-                  Use AgriBot
-                </button>
+                <></>
               )}
             </div>
 
