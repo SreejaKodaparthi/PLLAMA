@@ -79,15 +79,48 @@ export default function Chatbot() {
       if (!res.ok) throw new Error("Detection failed");
       const data = await res.json();
 
-      // 3️⃣ Prepare YOLO detection text
-      const yoloText = `🧠 YOLO detected: ${data.detections
-        .map((d) => `${d.class} (${d.confidence}%)`)
-        .join(", ")}`;
+      // // 3️⃣ Prepare YOLO detection text
+      // const yoloText = `🧠 YOLO detected: ${data.detections
+      //   .map((d) => `${d.class} (${d.confidence}%)`)
+      //   .join(", ")}`;
 
-      // 4️⃣ Create YOLO assistant messages
+      // // 4️⃣ Create YOLO assistant messages
+      // const yoloMessages = [
+      //   { role: "assistant", content: yoloText },
+      //   { role: "assistant", content: { imageUrl: data.annotated_image } },
+      // ];
+      // 3️⃣ Format YOLO detection text
+      const detectedClasses = data.detections.map((d) => d.class);
+      const yoloText = `🧠 YOLO detected: ${detectedClasses.join(", ")}.`;
+
+      // 4️⃣ Ask PLLaMA for detailed description
+      const llamaPrompt = `Explain the following crop diseases or objects in detail: ${detectedClasses.join(
+        ", "
+      )}. 
+Provide causes, symptoms, and preventive measures in a short paragraph.`;
+
+      let llamaResponse = "⚠️ Could not fetch PLLaMA response.";
+      try {
+        const token = localStorage.getItem("auth_token");
+        const currentUser = JSON.parse(localStorage.getItem("current_user"));
+        const user_location = currentUser?.location || "India";
+        const user_name = currentUser?.username || "User";
+
+        llamaResponse = await queryModel({
+          user_query: llamaPrompt,
+          user_id: activeChatId,
+          user_location,
+          user_name,
+        });
+      } catch (error) {
+        console.error("❌ LLaMA request failed:", error);
+      }
+
+      // 5️⃣ Create assistant messages
       const yoloMessages = [
         { role: "assistant", content: yoloText },
         { role: "assistant", content: { imageUrl: data.annotated_image } },
+        { role: "assistant", content: String(llamaResponse) },
       ];
 
       // 5️⃣ Update frontend chat
