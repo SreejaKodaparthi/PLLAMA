@@ -15,8 +15,8 @@ import {
   Edit2,
   Check,
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { Button } from "../components/ui/button";
+import { Input } from "../components/ui/input";
 import { motion, AnimatePresence } from "framer-motion";
 import { LlamaOutput } from "../utils/LlamaOutput";
 
@@ -44,120 +44,117 @@ export default function Chatbot() {
   const [detections, setDetections] = useState([]);
   const [detecting, setDetecting] = useState(false);
 
-  const handleFileUpload = async (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
+const handleFileUpload = async (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
 
-    const filePreview = URL.createObjectURL(file);
+  if (!activeChatId) {
+    alert("Please create or select a chat first.");
+    return;
+  }
 
-    // 1️⃣ Show uploaded image immediately in chat
-    const userImageMessage = {
-      role: "user",
-      content: { imageUrl: filePreview },
-    };
+  const filePreview = URL.createObjectURL(file);
 
+  // 1) Show the uploaded image immediately (preview)
+  const userImageMessage = { role: "user", content: { imageUrl: filePreview } };
+  setChatHistory((prev) =>
+    prev.map((chat) =>
+      chat.id === activeChatId
+        ? { ...chat, messages: [...chat.messages, userImageMessage] }
+        : chat
+    )
+  );
+
+  // 2) Send to YOLO backend
+  const formData = new FormData();
+  formData.append("file", file);
+
+  try {
+    const res = await fetch("http://127.0.0.1:8000/predict", {
+      method: "POST",
+      body: formData,
+    });
+    if (!res.ok) throw new Error("Detection failed");
+    const data = await res.json();
+
+    // 3) YOLO -> text prompt for PLLaMA
+    const detectedClasses = (data?.detections || []).map((d) => d.class);
+    const yoloText = detectedClasses.length
+      ? `🧠 YOLO detected: ${detectedClasses.join(", ")}.`
+      : "🧠 YOLO found no objects with high confidence.";
+
+    const llamaPrompt = detectedClasses.length
+      ? `Explain the following crop diseases or objects in detail: ${detectedClasses.join(", ")}.
+Provide causes, symptoms, and preventive measures in a short paragraph.`
+      : `The detector did not find a clear disease/object. Provide generic guidance on taking a clear plant leaf photo for diagnosis and what information to collect (location, crop, stage, symptoms).`;
+
+    let llamaResponse = "";
+    try {
+      const stored = localStorage.getItem("current_user");
+      const currentUser = stored ? JSON.parse(stored) : null;
+      const user_location = currentUser?.location || "India";
+      const user_name = currentUser?.username || "User";
+
+      llamaResponse = await queryModel({
+        user_query: llamaPrompt,
+        user_id: activeChatId,
+        user_location,
+        user_name,
+        use_web_search: false,
+      });
+    } catch (e2) {
+      console.error("PLLaMA request failed:", e2);
+      llamaResponse = "⚠️ Could not fetch description from PLLaMA.";
+    }
+
+    // 4) Compose assistant messages (text + annotated image + description)
+    const yoloMessages = [
+      { role: "assistant", content: yoloText },
+      data?.annotated_image
+        ? { role: "assistant", content: { imageUrl: data.annotated_image } }
+        : null,
+      { role: "assistant", content: String(llamaResponse || "") },
+    ].filter(Boolean);
+
+    // 5) Update UI
     setChatHistory((prev) =>
       prev.map((chat) =>
         chat.id === activeChatId
-          ? { ...chat, messages: [...chat.messages, userImageMessage] }
+          ? { ...chat, messages: [...chat.messages, ...yoloMessages] }
           : chat
       )
     );
 
-    const activeChat = chatHistory.find((chat) => chat.id === activeChatId);
-
-    // 2️⃣ Send image to YOLO backend
-    const formData = new FormData();
-    formData.append("file", file);
-
-    try {
-      const res = await fetch("http://127.0.0.1:8000/predict", {
-        method: "POST",
-        body: formData,
+    // 6) Persist to backend
+    const freshActive = (prev => prev.find(c => c.id === activeChatId))(chatHistory) || activeChat;
+    if (freshActive) {
+      await fetch(`http://localhost:5000/api/history/conversations/${activeChatId}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${localStorage.getItem("auth_token")}`,
+        },
+        body: JSON.stringify({
+          title: freshActive.title,
+          messages: [...freshActive.messages, userImageMessage, ...yoloMessages],
+        }),
       });
-
-      if (!res.ok) throw new Error("Detection failed");
-      const data = await res.json();
-
-      // // 3️⃣ Prepare YOLO detection text
-      // const yoloText = `🧠 YOLO detected: ${data.detections
-      //   .map((d) => `${d.class} (${d.confidence}%)`)
-      //   .join(", ")}`;
-
-      // // 4️⃣ Create YOLO assistant messages
-      // const yoloMessages = [
-      //   { role: "assistant", content: yoloText },
-      //   { role: "assistant", content: { imageUrl: data.annotated_image } },
-      // ];
-      // 3️⃣ Format YOLO detection text
-      const detectedClasses = data.detections.map((d) => d.class);
-      const yoloText = `🧠 YOLO detected: ${detectedClasses.join(", ")}.`;
-
-      // 4️⃣ Ask PLLaMA for detailed description
-      const llamaPrompt = `Explain the following crop diseases or objects in detail: ${detectedClasses.join(
-        ", "
-      )}. 
-Provide causes, symptoms, and preventive measures in a short paragraph.`;
-
-      let llamaResponse = "⚠️ Could not fetch PLLaMA response.";
-      try {
-        const token = localStorage.getItem("auth_token");
-        const currentUser = JSON.parse(localStorage.getItem("current_user"));
-        const user_location = currentUser?.location || "India";
-        const user_name = currentUser?.username || "User";
-
-        llamaResponse = await queryModel({
-          user_query: llamaPrompt,
-          user_id: activeChatId,
-          user_location,
-          user_name,
-        });
-      } catch (error) {
-        console.error("❌ LLaMA request failed:", error);
-      }
-
-      // 5️⃣ Create assistant messages
-      const yoloMessages = [
-        { role: "assistant", content: yoloText },
-        { role: "assistant", content: { imageUrl: data.annotated_image } },
-        { role: "assistant", content: String(llamaResponse) },
-      ];
-
-      // 5️⃣ Update frontend chat
-      setChatHistory((prev) =>
-        prev.map((chat) =>
-          chat.id === activeChatId
-            ? { ...chat, messages: [...chat.messages, ...yoloMessages] }
-            : chat
-        )
-      );
-
-      // 6️⃣ Save everything (user image + YOLO detections) to MongoDB
-      if (activeChat) {
-        await fetch(
-          `http://localhost:5000/api/history/conversations/${activeChatId}`,
-          {
-            method: "PUT",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${localStorage.getItem("auth_token")}`,
-            },
-            body: JSON.stringify({
-              title: activeChat.title,
-              messages: [
-                ...activeChat.messages,
-                userImageMessage,
-                ...yoloMessages,
-              ],
-            }),
-          }
-        );
-      }
-    } catch (error) {
-      console.error("❌ YOLO detection failed:", error);
-      alert("Something went wrong while detecting.");
     }
-  };
+  } catch (err) {
+    console.error("YOLO detection failed:", err);
+    const failMsg = {
+      role: "assistant",
+      content: "❌ YOLO detection failed. Please try another image.",
+    };
+    setChatHistory((prev) =>
+      prev.map((chat) =>
+        chat.id === activeChatId
+          ? { ...chat, messages: [...chat.messages, failMsg] }
+          : chat
+      )
+    );
+  }
+};
 
   const API_BASE = "http://localhost:5000/api/history";
 
