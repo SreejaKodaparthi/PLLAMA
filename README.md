@@ -1,270 +1,95 @@
-# 🧠 PLLama – AI-Powered Forensic Assistant
+🌱 PLLaMa – AI-Powered Plant Science Assistant
 
-An AI-powered platform that integrates **LLMs (LLaMA)** and **Computer Vision (YOLOv8)** to assist in forensic and agricultural scene analysis.
-It combines **three main components**:
+PLLaMa (Plant Large Language Model Assistant) is an AI-powered web platform for plant science and agriculture, integrating a domain-specific Large Language Model (PLLaMa / LLaMA-2) with computer vision (YOLOv8) to support plant disease analysis, agronomy queries, and agricultural decision-making.
 
-1. 🧩 **FastAPI (Python)** – YOLOv8 image detection service
-2. ⚙️ **Express.js + MongoDB** – chat management and authentication
-3. 💬 **React (Vite)** – interactive chatbot interface
+The system extends the original PLLaMa research paper into a fully deployable, multimodal MERN-based application with real-time data retrieval and multilingual support.
+.
 
----
+🔍 Project Overview
 
-## 🚀 Tech Stack
+General-purpose LLMs lack domain accuracy for scientific fields such as agriculture.
+PLLaMa addresses this by:
 
-| Layer      | Framework            | Description                                             |
-| ---------- | -------------------- | ------------------------------------------------------- |
-| Frontend   | React (Vite)         | Chatbot UI with integrated file uploads                 |
-| API Server | Express.js + MongoDB | Handles chat storage, authentication, and model routing |
-| AI Service | FastAPI + YOLOv8     | Detects and labels objects in uploaded images           |
-| Database   | MongoDB Atlas        | Stores all chat history (text + YOLO detections)        |
+Fine-tuning LLaMa-2 (7B Instruct) on large-scale plant science literature
 
----
+Integrating YOLOv8 for image-based plant disease detection
 
-## 🧩 Project Structure
+Providing a chat-based, user-friendly web interface
+🎯 Key Features
 
-```
-PLLAMA/
-│
-├── backend/
-│   ├── main.py               # FastAPI YOLO backend
-│   ├── server.js             # Express.js + MongoDB backend
-│   ├── routes/
-│   │   ├── auth.js
-│   │   ├── chatRoutes.js
-│   │   ├── historyRoutes.js
-│   │   ├── model.js
-│   │   ├── users.js
-│   ├── models/
-│   │   ├── Conversation.js
-│   │   ├── User.js
-│   ├── src/
-│   │   ├── yolo_model/
-│   │   │   ├── weights/best.pt
-│   │   │   ├── data/data_english.yaml
-│   │   ├── uploads/
-│   │   ├── results/
-│   ├── venv/ (ignored)
-│
-├── frontend/
-│   ├── src/
-│   │   ├── pages/
-│   │   │   ├── Chatbot.js
-│   │   │   ├── Login.jsx
-│   │   │   ├── SignUp.jsx
-│   │   ├── utils/
-│   │   │   ├── queryModel.js
-│   ├── package.json
-│
-├── .gitignore
-├── README.md
-```
+🌾 Plant science–specific question answering
 
----
+🖼️ Plant disease detection using YOLOv8
 
-## 🧠 Setup Guide
+💬 Interactive chatbot with persistent chat history
 
-### 1️⃣ Clone the Repository
+🎤 Voice-enabled interaction (STT & TTS)
 
-```bash
-git clone https://github.com/<your-username>/PLLAMA.git
+🌍 Multilingual support for regional accessibility
+
+☁️ Real-time weather and pest data integration
+🚀 Tech Stack
+Layer	Technology	Purpose
+Frontend	React (Vite)	Chatbot UI & image uploads
+API Server	Express.js + MongoDB	Authentication, chat management
+AI Service	FastAPI + YOLOv8	Plant disease detection
+LLM	PLLaMa / LLaMA-2 7B	Plant science QA
+Database	MongoDB Atlas	Chat & detection persistence
+🧠 Setup Guide
+1️⃣ Clone Repository
+git clone https://github.com/SreejaKodaparthi/PLLAMA.git
 cd PLLAMA
-```
 
----
-
-### 2️⃣ Setup Backend (Node.js + MongoDB)
-
-**Navigate to backend folder:**
-
-```bash
+2️⃣ Backend Setup (Node.js + MongoDB)
 cd backend
-```
-
-**Install dependencies:**
-
-```bash
 npm install
-```
 
-**Create `.env` file:**
 
-```bash
-touch .env
-```
+Create .env:
 
-**Add these environment variables:**
-
-```
 MONGO_URI=your_mongodb_connection_string
 JWT_SECRET=your_secret_key
 ALLOWED_ORIGIN=http://localhost:3000
 PORT=5000
-```
 
-**Start the Node.js server:**
 
-```bash
+Run server:
+
 npm run dev
-```
 
-✅ Server will run on:
-
-```
-http://localhost:5000
-```
-
-You should see:
-
-```
-✅ MongoDB connected
-🚀 Server running on port 5000
-```
-
----
-
-### 3️⃣ Setup YOLO API (FastAPI)
-
-**Activate Python environment:**
-
-```bash
+3️⃣ YOLO API Setup (FastAPI)
 cd backend
 python -m venv venv
-venv\Scripts\activate    # (Windows)
-pip install "fastapi[all]"
-pip install ultralytics
-# OR
-source venv/bin/activate # (Mac/Linux)
-```
+venv\Scripts\activate    # Windows
+# or source venv/bin/activate (Mac/Linux)
 
-**Install dependencies:**
-
-```bash
 pip install -r requirements.txt
-```
-
-If you don’t have a `requirements.txt` yet, create it with:
-
-```bash
-pip freeze > requirements.txt
-```
-
-**Run FastAPI YOLO backend:**
-
-```bash
 uvicorn main:app --reload
-```
 
-✅ API runs at:
 
-```
-http://127.0.0.1:8000
-```
+Runs at: http://127.0.0.1:8000
 
----
-
-### 4️⃣ Setup Frontend (React)
-
-**Open new terminal:**
-
-```bash
+4️⃣ Frontend Setup
 cd frontend
-```
-
-**Install dependencies:**
-
-```bash
 npm install
-```
-
-**Run development server:**
-
-```bash
 npm run dev
-```
 
-✅ App runs at:
 
-```
-http://localhost:3000
-```
+Runs at: http://localhost:3000
 
----
+🔄 System Integration
+Component	URL
+Frontend	http://localhost:3000
 
-## 🔄 Testing Integration
+Express API	http://localhost:5000
 
-When everything is running:
+YOLO FastAPI	http://127.0.0.1:8000
+📌 Use Cases
 
-* Frontend → `http://localhost:3000`
-* Express API → `http://localhost:5000`
-* YOLO FastAPI → `http://127.0.0.1:8000`
+Crop disease diagnosis
 
-🧠 Try uploading an image via the chatbot “➕” button.
-You should see:
+Agricultural advisory systems
 
-* The uploaded image preview
-* YOLO detection text (`coffee_rust (91.2%)`)
-* Annotated result image
+Plant science research assistance
 
-All messages (text + images) will persist in MongoDB even after refresh ✅
-
----
-
-## 🧾 Common Commands Summary
-
-| Task                   | Command                                            |
-| ---------------------- | -------------------------------------------------- |
-| Run frontend           | `npm run dev` (inside `frontend/`)                 |
-| Run backend server     | `npm run dev` (inside `backend/`)                  |
-| Start YOLO API         | `uvicorn main:app --reload`                        |
-| Create Python env      | `python -m venv venv`                              |
-| Activate env (Windows) | `venv\Scripts\activate`                            |
-| Install backend deps   | `npm install`                                      |
-| Install Python deps    | `pip install -r requirements.txt`                  |
-| Add dependencies       | `npm install <package>` or `pip install <package>` |
-
----
-
-## 🧠 Developer Notes
-
-* YOLOv8 model path: `backend/src/yolo_model/weights/best.pt`
-* Annotated images stored in: `backend/src/results/`
-* Uploads temporarily stored in: `backend/src/uploads/`
-* MongoDB collection: `conversations`
-* Environment variables are **never committed** (`.env` is ignored)
-* Make sure both servers (Express + FastAPI) are running together for full functionality.
-
----
-
-## 🧰 Troubleshooting
-
-| Issue                             | Possible Fix                                      |
-| --------------------------------- | ------------------------------------------------- |
-| `{"detail":"Method Not Allowed"}` | Check if you are using `POST` to `/predict`       |
-| YOLO output not in English        | Ensure `data_english.yaml` is loaded in `main.py` |
-| Chat not saving                   | Check MongoDB connection string & `.env`          |
-| Images not showing                | Verify CORS settings in FastAPI `main.py`         |
-
----
-
-## 👥 Team Guidelines
-
-* Always pull latest changes before working:
-
-  ```bash
-  git pull origin main
-  ```
-* Use feature branches:
-
-  ```bash
-  git checkout -b feature/yolo-improvements
-  ```
-* After testing, commit & push:
-
-  ```bash
-  git add .
-  git commit -m "Added YOLO persistence"
-  git push origin feature/yolo-improvements
-  ```
-* Create a Pull Request for review.
-
----
+Multilingual farming support
