@@ -268,10 +268,3 @@ All messages (text + images) will persist in MongoDB even after refresh ✅
 * Create a Pull Request for review.
 
 ---
-
-## 🏁 Final Note
-
-You’ve built a **cross-framework AI system** — React + Node + FastAPI + YOLO + MongoDB — all working seamlessly.
-Keep your `.env` private and your weights folder lightweight before pushing to GitHub.
-
-✨ *Built by Tripura and team — PLLama Project* 🧠💻
