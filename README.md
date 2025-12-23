@@ -1,101 +1,165 @@
-🌱 PLLaMa – AI-Powered Plant Science Assistant
+# 🌱 **PLLaMa – AI-Powered Plant Science Assistant**
 
-PLLaMa (Plant Large Language Model Assistant) is an AI-powered web platform for plant science and agriculture. It integrates a domain-specific Large Language Model (PLLaMa / LLaMA-2) with computer vision (YOLOv8) to support plant disease detection, agronomy queries, and agricultural decision-making.
+> **An intelligent, multimodal AI system for plant science and agriculture**
 
-This project extends the original PLLaMa research paper into a fully deployable, multimodal MERN-based application with real-time data retrieval and multilingual support.
+**PLLaMa (Plant Large Language Model Assistant)** is an **AI-powered web platform** designed to support **plant disease detection, agronomy queries, and agricultural decision-making**.
 
-🔍 Project Overview
+It integrates a **domain-specific Large Language Model (PLLaMa / LLaMA-2)** with **computer vision (YOLOv8)** to deliver accurate, real-world agricultural insights.
 
-General-purpose LLMs lack domain accuracy for scientific fields such as agriculture.
-PLLaMa addresses this by:
+This project extends the **original PLLaMa research paper** into a **fully deployable, multimodal MERN-based application** with **real-time data retrieval** and **multilingual support**.
 
-Fine-tuning LLaMa-2 (7B Instruct) on large-scale plant science literature
+---
 
-Integrating YOLOv8 for image-based plant disease detection
+## 🔍 **Project Overview**
 
-Providing a chat-based, user-friendly web interface
+*General-purpose LLMs lack accuracy in scientific domains such as agriculture.*
 
-🎯 Key Features
+**PLLaMa addresses this gap by:**
 
-🌾 Plant science-specific question answering
+- **Fine-tuning _LLaMA-2 (7B Instruct)_** on large-scale plant science literature  
+- **Integrating _YOLOv8_** for image-based plant disease detection  
+- Providing a **chat-based, user-friendly web interface**  
+- Supporting **text, image, and voice-based interaction**
 
-🖼️ Plant disease detection using YOLOv8
+---
 
-💬 Interactive chatbot with persistent chat history
+## 🎯 **Key Features**
 
-🎤 Voice-enabled interaction (Speech-to-Text & Text-to-Speech)
+- 🌾 **Plant science-specific question answering**
+- 🖼️ **Plant disease detection** using **YOLOv8**
+- 💬 **Interactive chatbot** with persistent chat history
+- 🎤 **Voice-enabled interaction** (_Speech-to-Text & Text-to-Speech_)
+- 🌍 **Multilingual support** for regional accessibility
+- ☁️ **Real-time weather and pest data integration**
 
-🌍 Multilingual support for regional accessibility
+---
 
-☁️ Real-time weather and pest data integration
+## 🚀 **Tech Stack**
 
-🚀 Tech Stack
-Layer	Technology	Purpose
-Frontend	React (Vite)	Chatbot UI & image uploads
-API Server	Express.js + MongoDB	Authentication & chat management
-AI Service	FastAPI + YOLOv8	Plant disease detection
-LLM	PLLaMa / LLaMA-2 (7B)	Plant science Q&A
-Database	MongoDB Atlas	Chat & detection persistence
-🧠 Setup Guide
-1️⃣ Clone Repository
+| **Layer** | **Technology** | **Purpose** |
+|---------|---------------|------------|
+| **Frontend** | React (Vite) | Chatbot UI & image uploads |
+| **API Server** | Express.js + MongoDB | Authentication & chat management |
+| **AI Service** | FastAPI + YOLOv8 | Plant disease detection |
+| **LLM** | PLLaMa / LLaMA-2 (7B) | Plant science Q&A |
+| **Database** | MongoDB Atlas | Chat & detection persistence |
+
+---
+
+## 🧠 **System Architecture**
+
+```text
+User
+ └──▶ React Chatbot (Text / Voice / Image)
+        └──▶ Express.js API ───▶ MongoDB
+                └──▶ FastAPI (YOLOv8)
+                        └──▶ PLLaMa (LLaMA-2)
+```
+
+---
+
+## 🧠 **Setup Guide**
+
+### 1️⃣ **Clone the Repository**
+```bash
 git clone https://github.com/SreejaKodaparthi/PLLAMA.git
 cd PLLAMA
+```
 
-2️⃣ Backend Setup (Node.js + MongoDB)
+---
+
+### 2️⃣ **Backend Setup (Node.js + MongoDB)**
+```bash
 cd backend
 npm install
+```
 
-
-Create .env file:
-
+Create a `.env` file:
+```env
 MONGO_URI=your_mongodb_connection_string
 JWT_SECRET=your_secret_key
 ALLOWED_ORIGIN=http://localhost:3000
 PORT=5000
+```
 
-
-Run server:
-
+Run the server:
+```bash
 npm run dev
+```
 
-3️⃣ YOLO API Setup (FastAPI)
+> ✅ Backend runs at **http://localhost:5000**
+
+---
+
+### 3️⃣ **YOLO API Setup (FastAPI)**
+```bash
 cd backend
 python -m venv venv
-venv\Scripts\activate      # Windows
-# OR
-source venv/bin/activate  # Mac/Linux
+```
 
+Activate environment:
+
+**Windows**
+```bash
+venv\Scripts\activate
+```
+
+**Mac / Linux**
+```bash
+source venv/bin/activate
+```
+
+Install dependencies and start API:
+```bash
 pip install -r requirements.txt
 uvicorn main:app --reload
+```
 
+> ✅ YOLO API runs at **http://127.0.0.1:8000**
 
-Runs at:
+---
 
-http://127.0.0.1:8000
-
-4️⃣ Frontend Setup
+### 4️⃣ **Frontend Setup**
+```bash
 cd frontend
 npm install
 npm run dev
+```
 
+> ✅ Frontend runs at **http://localhost:3000**
 
-Runs at:
+---
 
-http://localhost:3000
+## 🔄 **System Integration**
 
-🔄 System Integration
-Component	URL
-Frontend	http://localhost:3000
+| **Component** | **URL** |
+|--------------|--------|
+| **Frontend** | http://localhost:3000 |
+| **Express API** | http://localhost:5000 |
+| **YOLO FastAPI** | http://127.0.0.1:8000 |
 
-Express API	http://localhost:5000
+> 📸 Upload a plant image using the **➕ button** in the chatbot to receive:
+> - Disease label with confidence score  
+> - Annotated output image  
+> - Stored chat history in MongoDB  
 
-YOLO FastAPI	http://127.0.0.1:8000
-📌 Use Cases
+---
 
-Crop disease diagnosis
+## 📌 **Use Cases**
 
-Agricultural advisory systems
+- 🌿 **Crop disease diagnosis**
+- 📊 **Agricultural advisory systems**
+- 🔬 **Plant science research assistance**
+- 🌍 **Multilingual farming support**
 
-Plant science research assistance
+---
 
-Multilingual farming support
+## 🧠 **Developer Notes**
+
+- **YOLO weights:** `backend/src/yolo_model/weights/best.pt`
+- **Uploads:** `backend/src/uploads/`
+- **Results:** `backend/src/results/`
+- **MongoDB collection:** `conversations`
+- ⚠️ **`.env` files are ignored for security**
+
+---
